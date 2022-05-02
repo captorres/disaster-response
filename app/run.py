@@ -21,6 +21,16 @@ app = Flask(__name__)
 
 def customTokenize(text):
 
+    """
+    Custom tokenize function has to case normalize, stem and tokenize a text
+
+    Parameters
+    text: the text to be tokenized
+
+    Returns
+    words: list of tokenized words
+    """
+
     # Transform to lowercase and remove punctuation characters
     text = re.sub(r"[^a-zA-Z0-9]", " ", text.lower())
 

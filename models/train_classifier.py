@@ -21,8 +21,22 @@ import pickle
 
 def load_data(database_filepath):
 
+"""
+Read the MessagesCategories table from a specified SQLite data base and select
+appropriate data to be used for model development
+
+Parameters
+database_filepath: complete database filepath where the MessagesCategories is
+stored
+
+Returns
+X: message column from the MessagesCategories table
+y: all categories columns from the MessagesCategories table
+y.columns: all categories names
+
+"""
     # load data from database
-    engine = create_engine('sqlite:///' + database_filepath + '.db')
+    engine = create_engine('sqlite:///' + database_filepath)
     df = pd.read_sql("SELECT * FROM MessagesCategories", engine)
 
     # Defining X and y data
@@ -33,6 +47,16 @@ def load_data(database_filepath):
 
 
 def customTokenize(text):
+
+    """
+    Custom tokenize function has to case normalize, stem and tokenize a text
+
+    Parameters
+    text: the text to be tokenized
+
+    Returns
+    words: list of tokenized words
+    """
 
     # Transform to lowercase and remove punctuation characters
     text = re.sub(r"[^a-zA-Z0-9]", " ", text.lower())
@@ -52,6 +76,19 @@ def customTokenize(text):
 
 def build_model():
 
+    """
+    Apply countvectorizer function with a custom tokenizer, generate text
+    features using tf-idf transformer and train a multiclass supervised machine
+    learning model using Stochastic Gradient Descent algorithm, using
+    GridSearchCV for hyperparameter tuning.
+
+    Parameters
+    There are no parameters necessary
+
+    Returns
+    cv: model training pipeline as estimator
+    """
+
     pipeline = Pipeline([
             ('countvect', CountVectorizer(tokenizer=customTokenize)),
             ('tfidf', TfidfTransformer()),
@@ -70,6 +107,20 @@ def build_model():
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    """
+    Apply model prediction in test sample and returns the classification report
+    for model evaluation. The results for the prediction of each category
+    are printed
+
+    Parameters
+    model: model that will be applied to the test sample
+    X_test: features (messages) of the test sample
+    Y_test: observed classification (categories) of the test sample
+    category_names: categories names
+
+    Returns
+    This function doesn't generate a return
+    """
 
     # predict on test data
     y_pred=model.predict(X_test)
@@ -81,11 +132,32 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
 
 def save_model(model, model_filepath):
+    """
+    Saves the model as a pickle file.
+
+    Parameters
+    model: model that will be applied to the test sample
+    model_filepath: complete file path where the pickle file will be stored
+
+    Returns
+    This function doesn't generate a return
+    """
+
     with open(model_filepath,'wb') as f:
         pickle.dump(model, f)
 
 
 def main():
+    """
+    Controls the machine learning pipeline calling all the necessary functions.
+
+    Parameters
+    There are no parameters necessary
+
+    Returns
+    This function doesn't generate a return
+    """
+
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))

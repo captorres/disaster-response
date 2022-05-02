@@ -3,19 +3,34 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 def load_data(messages_filepath, categories_filepath):
-    
+
+    """
+    Import two csv files (messages and categories), apply necessary
+    transformations in the data and merge the two data sets
+
+    Parameters
+    messages_filepath: complete filepath of the messages csv file (including
+    filename)
+    categories_filepath: complete filepath of the categories csv file
+    (including filename)
+
+    Returns
+    df: a data frame with both messages and categoires information
+
+    """
+
     # Read messages dataset
     messages = pd.read_csv(messages_filepath)
-    
+
     # Read categories dataset
     categories = pd.read_csv(categories_filepath)
-    
+
     # Merge messages and categories data sets
     df = messages.merge(categories, how='left', on='id')
 
     # Create a dataframe of the 36 individual category columns
     categories = df.categories.str.split(';', expand=True)
-    
+
     # Select the first row of the categories dataframe as columns names
     row = categories.iloc[0,:]
     category_colnames = [s[:-2] for s in row]
@@ -29,26 +44,36 @@ def load_data(messages_filepath, categories_filepath):
     for column in categories:
         # set each value to be the last character of the string
         categories[column] = categories[column].astype(str).str[-1]
-    
+
         # convert column from string to numeric
         categories[column] = categories[column].astype(int)
-    
+
     # Drop the original categories column from `df`
     df.drop('categories', axis=1, inplace=True)
-    
+
     # Concatenate the original dataframe with the new `categories` dataframe
     df = pd.concat([df, categories], axis=1)
-    
+
     # Exclude rows with categories differente from 0 or 1
     for col in cols:
         df = df[df[col].isin([0,1])]
-    
+
     return df
 
 
 
 def clean_data(df):
 
+    """
+    Drop duplicates from a data frame
+
+    Parameters
+    df: data frame
+
+    Returns
+    df: a data frame without duplicates
+
+    """
     # drop duplicates
     df = df.drop_duplicates()
 
@@ -57,11 +82,36 @@ def clean_data(df):
 
 
 def save_data(df, database_filename):
+
+    """
+    Stores a data frame with the name MessagesCategories in a specified SQLite
+    database
+
+    Parameters
+    df: data frame to be stored
+    database_filename: complete database filename used for storage
+
+    Returns
+    This function doesn't generate a return
+
+    """
+
     engine = create_engine('sqlite:///' + database_filename)
     df.to_sql('MessagesCategories', engine, index=False)
 
 
 def main():
+
+    """
+    Controls the ETL pipeline calling all the necessary functions.
+
+    Parameters
+    There are no parameters necessary
+
+    Returns
+    This function doesn't generate a return
+    """
+
     if len(sys.argv) == 4:
 
         messages_filepath, categories_filepath, database_filepath = sys.argv[1:]
@@ -72,12 +122,12 @@ def main():
 
         print('Cleaning data...')
         df = clean_data(df)
-        
+
         print('Saving data...\n    DATABASE: {}'.format(database_filepath))
         save_data(df, database_filepath)
-        
+
         print('Cleaned data saved to database!')
-    
+
     else:
         print('Please provide the filepaths of the messages and categories '\
               'datasets as the first and second argument respectively, as '\
